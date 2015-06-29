@@ -82,6 +82,19 @@
     };
   };
 
+  function lambdaParse(str, arg) {
+    if (!str) {
+      return null;
+    } else if (typeof str === 'function') {
+      return str;
+    }
+    str = str.replace(/$=>/, '');
+    str = str.replace(/(\$)/g, 'arguments[0]');
+    str = str.replace(/\#(\d)/g, 'arguments[$1]');
+    str = 'return function () { return ' + str + ';   };';
+
+    return new Function('_', 'arg', str)(_, arg).bind(arg);
+  }
   // A mostly-internal function to generate callbacks that can be applied
   // to each element in a collection, returning the desired result — either
   // identity, an arbitrary callback, a property matcher, or a property accessor.
@@ -89,6 +102,7 @@
     if (value == null) return _.identity;
     if (_.isFunction(value)) return optimizeCb(value, context, argCount);
     if (_.isObject(value)) return _.matcher(value);
+    if (_.isString(value) && /$\=\>/.test(value)) return lambdaParse(value, context);
     return _.property(value);
   };
   _.iteratee = function(value, context) {
@@ -146,6 +160,88 @@
     var length = getLength(collection);
     return typeof length == 'number' && length >= 0 && length <= MAX_ARRAY_INDEX;
   };
+  function closeIter(iter) {
+    if (iter && iter.close) {
+      iter.close();
+    }
+  }
+
+
+  function iterateDW(collection, callback, firstElfn) {
+    var iter,
+      keys,
+      value,
+      result,
+      length,
+      i,
+      count = 0,
+      callfirstElfn = function(v) {
+        if (firstElfn) {
+          callfirstElfn = _.noop;
+          firstElfn(v);
+          return true;
+        }
+      };
+
+    callback = lambdaParse(callback);
+
+    if (typeof collection === 'object' && collection !== null) {
+      if ('iterator' in collection && typeof collection.iterator === 'function') {
+        // suppose that collection is DW collection
+        iter = collection.iterator();
+        while (iter.hasNext()) {
+          value = iter.next();
+          if (callfirstElfn(value)) {
+            count++;
+            continue;
+          }
+          result = callback(value, count++, collection);
+          if (result === false) {
+            closeIter(iter);
+            return result;
+          }
+        }
+        closeIter(iter);
+      } else if ('hasNext' in collection && typeof collection.hasNext === 'function') {
+        // suppose that collection is DW iterator
+        while (collection.hasNext()) {
+          value = collection.next();
+          if (callfirstElfn(value)) {
+            count++;
+            continue;
+          }
+          result = callback(value, count++, collection);
+          if (result === false) {
+            return result;
+          }
+        }
+        closeIter(collection);
+      } else if (isArrayLike(collection)) {
+        // suppose that collection is array
+        for (i = 0, length = collection.length; i < length; i++) {
+          if (callfirstElfn(collection[i])) {
+            continue;
+          }
+          result = callback(collection[i], i, collection);
+          if (result === false) {
+            return result;
+          }
+        }
+      } else {
+        // suppose that collection is plain object
+        keys = _.keys(collection);
+        for (i = 0, length = keys.length; i < length; i++) {
+          if (callfirstElfn(collection[keys[i]])) {
+            continue;
+          }
+          result = callback(collection[keys[i]], keys[i], collection);
+          if (result === false) {
+            return result;
+          }
+        }
+      }
+    }
+  }
 
   // Collection Functions
   // --------------------
@@ -155,30 +251,19 @@
   // sparse array-likes as if they were dense.
   _.each = _.forEach = function(obj, iteratee, context) {
     iteratee = optimizeCb(iteratee, context);
-    var i, length;
-    if (isArrayLike(obj)) {
-      for (i = 0, length = obj.length; i < length; i++) {
-        iteratee(obj[i], i, obj);
-      }
-    } else {
-      var keys = _.keys(obj);
-      for (i = 0, length = keys.length; i < length; i++) {
-        iteratee(obj[keys[i]], keys[i], obj);
-      }
-    }
+    iterateDW(obj, function() {
+      iteratee.apply(null, arguments);
+    });
     return obj;
   };
 
   // Return the results of applying the iteratee to each element.
   _.map = _.collect = function(obj, iteratee, context) {
     iteratee = cb(iteratee, context);
-    var keys = !isArrayLike(obj) && _.keys(obj),
-        length = (keys || obj).length,
-        results = Array(length);
-    for (var index = 0; index < length; index++) {
-      var currentKey = keys ? keys[index] : index;
-      results[index] = iteratee(obj[currentKey], currentKey, obj);
-    }
+    var results = [];
+    iterateDW(obj, function() {
+      results.push(iteratee.apply(null, arguments));
+    });
     return results;
   };
 
@@ -194,6 +279,7 @@
         memo = obj[keys ? keys[index] : index];
         index += dir;
       }
+
       for (; index >= 0 && index < length; index += dir) {
         var currentKey = keys ? keys[index] : index;
         memo = iteratee(memo, obj[currentKey], currentKey, obj);
@@ -209,20 +295,40 @@
 
   // **Reduce** builds up a single result from a list of values, aka `inject`,
   // or `foldl`.
-  _.reduce = _.foldl = _.inject = createReduce(1);
+  _.reduce = _.foldl = _.inject = function(obj, iteratee, memo, context) {
+    iteratee = optimizeCb(iteratee, context, 4);
+    function initial(value) {
+      memo = value;
+    }
+    if (typeof memo === 'undefined') {
+      if (obj == null) {
+        return void 0;
+      }
+      iterateDW(obj, function(value, key, collection) {
+        memo = iteratee(memo, value, key, collection);
+      }, initial);
+    } else {
+      iterateDW(obj, function(value, key, collection) {
+        memo = iteratee(memo, value, key, collection);
+      });
+    }
+    return memo;
+  };
 
   // The right-associative version of reduce, also known as `foldr`.
   _.reduceRight = _.foldr = createReduce(-1);
 
   // Return the first value which passes a truth test. Aliased as `detect`.
   _.find = _.detect = function(obj, predicate, context) {
-    var key;
-    if (isArrayLike(obj)) {
-      key = _.findIndex(obj, predicate, context);
-    } else {
-      key = _.findKey(obj, predicate, context);
-    }
-    if (key !== void 0 && key !== -1) return obj[key];
+    var result;
+    predicate = cb(predicate, context);
+    iterateDW(obj, function(element, index, collection) {
+      if (predicate(element, index, collection)) {
+        result = element;
+        return false;
+      }
+    });
+    return result;
   };
 
   // Return all the elements that pass a truth test.
@@ -245,26 +351,28 @@
   // Aliased as `all`.
   _.every = _.all = function(obj, predicate, context) {
     predicate = cb(predicate, context);
-    var keys = !isArrayLike(obj) && _.keys(obj),
-        length = (keys || obj).length;
-    for (var index = 0; index < length; index++) {
-      var currentKey = keys ? keys[index] : index;
-      if (!predicate(obj[currentKey], currentKey, obj)) return false;
-    }
-    return true;
+    var result = true;
+    _.find(obj, function(value, key) {
+      if (!predicate(value, key, obj)) {
+        result = false;
+        return true;
+      }
+    }, context);
+    return result;
   };
 
   // Determine if at least one element in the object matches a truth test.
   // Aliased as `any`.
   _.some = _.any = function(obj, predicate, context) {
     predicate = cb(predicate, context);
-    var keys = !isArrayLike(obj) && _.keys(obj),
-        length = (keys || obj).length;
-    for (var index = 0; index < length; index++) {
-      var currentKey = keys ? keys[index] : index;
-      if (predicate(obj[currentKey], currentKey, obj)) return true;
-    }
-    return false;
+    var result = false;
+    _.find(obj, function(value, key) {
+      if (predicate(value, key, obj)) {
+        result = true;
+        return true;
+      }
+    }, context);
+    return result;
   };
 
   // Determine if the array or object contains a given item (using `===`).
@@ -303,16 +411,13 @@
 
   // Return the maximum element (or element-based computation).
   _.max = function(obj, iteratee, context) {
-    var result = -Infinity, lastComputed = -Infinity,
-        value, computed;
+    var result = -Infinity, lastComputed = -Infinity, computed;
     if (iteratee == null && obj != null) {
-      obj = isArrayLike(obj) ? obj : _.values(obj);
-      for (var i = 0, length = obj.length; i < length; i++) {
-        value = obj[i];
+      _.each(obj, function(value) {
         if (value > result) {
           result = value;
         }
-      }
+      });
     } else {
       iteratee = cb(iteratee, context);
       _.each(obj, function(v, index, list) {
@@ -328,16 +433,13 @@
 
   // Return the minimum element (or element-based computation).
   _.min = function(obj, iteratee, context) {
-    var result = Infinity, lastComputed = Infinity,
-        value, computed;
+    var result = Infinity, lastComputed = Infinity, computed;
     if (iteratee == null && obj != null) {
-      obj = isArrayLike(obj) ? obj : _.values(obj);
-      for (var i = 0, length = obj.length; i < length; i++) {
-        value = obj[i];
+      _.each(obj, function(value) {
         if (value < result) {
           result = value;
         }
-      }
+      });
     } else {
       iteratee = cb(iteratee, context);
       _.each(obj, function(v, index, list) {
