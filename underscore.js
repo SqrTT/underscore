@@ -88,7 +88,8 @@
     } else if (typeof str === 'function') {
       return str;
     }
-    str = str.replace(/$=>/, '');
+    
+    str = str.replace('->', '');
     str = str.replace(/(\$)/g, 'arguments[0]');
     str = str.replace(/\#(\d)/g, 'arguments[$1]');
     str = 'return function () { return ' + str + ';   };';
@@ -102,7 +103,9 @@
     if (value == null) return _.identity;
     if (_.isFunction(value)) return optimizeCb(value, context, argCount);
     if (_.isObject(value)) return _.matcher(value);
-    if (_.isString(value) && /$\=\>/.test(value)) return lambdaParse(value, context);
+    if (_.isString(value) && value.indexOf('->') !== -1) {
+      return lambdaParse(value, context);
+    };
     return _.property(value);
   };
   _.iteratee = function(value, context) {
@@ -146,7 +149,7 @@
 
   var property = function(key) {
     return function(obj) {
-      return obj == null ? void 0 : obj[key];
+      return obj == null ? void 0 : _.prop(obj, key);
     };
   };
 
@@ -166,7 +169,6 @@
     }
   }
 
-
   function iterateDW(collection, callback, firstElfn) {
     var iter,
       keys,
@@ -175,9 +177,9 @@
       length,
       i,
       count = 0,
-      callfirstElfn = function(v) {
+      callfirstElfn = firstElfn && function(v) {
         if (firstElfn) {
-          callfirstElfn = _.noop;
+          callfirstElfn = null;
           firstElfn(v);
           return true;
         }
@@ -191,7 +193,7 @@
         iter = collection.iterator();
         while (iter.hasNext()) {
           value = iter.next();
-          if (callfirstElfn(value)) {
+          if (callfirstElfn && callfirstElfn(value)) {
             count++;
             continue;
           }
@@ -206,7 +208,7 @@
         // suppose that collection is DW iterator
         while (collection.hasNext()) {
           value = collection.next();
-          if (callfirstElfn(value)) {
+          if (callfirstElfn && callfirstElfn(value)) {
             count++;
             continue;
           }
@@ -219,7 +221,7 @@
       } else if (isArrayLike(collection)) {
         // suppose that collection is array
         for (i = 0, length = collection.length; i < length; i++) {
-          if (callfirstElfn(collection[i])) {
+          if (callfirstElfn && callfirstElfn(collection[i])) {
             continue;
           }
           result = callback(collection[i], i, collection);
@@ -231,7 +233,7 @@
         // suppose that collection is plain object
         keys = _.keys(collection);
         for (i = 0, length = keys.length; i < length; i++) {
-          if (callfirstElfn(collection[keys[i]])) {
+          if (callfirstElfn && callfirstElfn(collection[keys[i]])) {
             continue;
           }
           result = callback(collection[keys[i]], keys[i], collection);
@@ -1003,6 +1005,23 @@
   // Returns a function that will be executed at most one time, no matter how
   // often you call it. Useful for lazy initialization.
   _.once = _.partial(_.before, 2);
+
+  _.prop = _.getProp = function getProp(object, path, defaults) {
+    var parts = (path + '').split('.'),
+      part;
+
+    while (parts.length) {
+      part = parts.shift();
+      if (typeof object === 'object' && object !== null && part in object) {
+        object = object[part];
+      } else if (_.isString(object)) {
+        return object[path];
+      } else {
+        return defaults;
+      }
+    }
+    return object;
+  };
 
   _.restArgs = restArgs;
 
