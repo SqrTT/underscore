@@ -105,7 +105,7 @@
     if (_.isObject(value)) return _.matcher(value);
     if (_.isString(value) && value.indexOf('->') !== -1) {
       return lambdaParse(value, context);
-    };
+    }
     return _.property(value);
   };
   _.iteratee = function(value, context) {
@@ -1015,9 +1015,11 @@
       if (typeof object === 'object' && object !== null && part in object) {
         object = object[part];
       } else if (_.isString(object)) {
-        return object[path];
+        object = object[part];
+        break;
       } else {
-        return defaults;
+        object = defaults;
+        break;
       }
     }
     return object;
