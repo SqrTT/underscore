@@ -174,6 +174,7 @@
     var length = getLength(collection);
     return typeof length == 'number' && length >= 0 && length <= MAX_ARRAY_INDEX;
   };
+
   function closeIter(iter) {
     if (iter && iter.close) {
       iter.close();
@@ -573,20 +574,35 @@
   // allows it to work with `_.map`.
   _.first = _.head = _.take = function(array, n, guard) {
     if (array == null) return void 0;
-    if (n == null || guard) return array[0];
-    return _.initial(array, array.length - n);
+    if (n == null || guard) {
+      n = 1;
+    }
+    var result = [];
+    _.find(array, function(value) {
+      if (result.length !== n && result.length < n) {
+        result.push(value);
+      } else {
+        return true;
+      }
+    });
+    if (result.length === 1) {
+      result = result.pop();
+    }
+    return result;
   };
 
   // Returns everything but the last entry of the array. Especially useful on
   // the arguments object. Passing **n** will return all the values in
   // the array, excluding the last N.
   _.initial = function(array, n, guard) {
+    array = _.toArray(array);
     return slice.call(array, 0, Math.max(0, array.length - (n == null || guard ? 1 : n)));
   };
 
   // Get the last element of an array. Passing **n** will return the last N
   // values in the array.
   _.last = function(array, n, guard) {
+    array = _.toArray(array);
     if (array == null) return void 0;
     if (n == null || guard) return array[array.length - 1];
     return _.rest(array, Math.max(0, array.length - n));
@@ -596,7 +612,16 @@
   // Especially useful on the arguments object. Passing an **n** will return
   // the rest N values in the array.
   _.rest = _.tail = _.drop = function(array, n, guard) {
-    return slice.call(array, n == null || guard ? 1 : n);
+    var result = [], count = 0;
+    n = n == null || guard ? 1 : n;
+    _.each(array, function(value) {
+      count++;
+      if (count > n) {
+        result.push(value);
+      }
+    });
+    return result;
+    //return slice.call(array, n == null || guard ? 1 : n);
   };
 
   // Trim out all falsy values from an array.
