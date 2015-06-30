@@ -1,3 +1,4 @@
+
                        __
                       /\ \                                                         __
      __  __    ___    \_\ \     __   _ __   ____    ___    ___   _ __    __       /\_\    ____
@@ -7,6 +8,14 @@
       \/___/  \/_/\/_/\/__,_ /\/____/ \/_/ \/___/  \/____/\/___/  \/_/ \/____/\/_//\ \_\ \/___/
                                                                                   \ \____/
                                                                                    \/___/
+
+![build status](https://travis-ci.org/SqrTT/underscore.svg?branch=misterDW)
+
+#Improved version for Demandware
+
+List of changes:
+* added method `_.prop`
+
 
 Underscore.js is a utility-belt library for JavaScript that provides
 support for the usual functional suspects (each, map, reduce, filter...)
