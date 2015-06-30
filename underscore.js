@@ -83,18 +83,29 @@
   };
 
   function lambdaParse(str, arg) {
-    if (!str) {
-      return null;
-    } else if (typeof str === 'function') {
-      return str;
+    if (!str) return null;
+    if (typeof str === 'function') return str;
+
+    var names, fn;
+
+    var m = /^\s*(\w+)\s*->(.+)$/.exec(str);
+    if (m) {
+      names = [m[1]];
+      str = m[2];
+    } else if (m = /^\s*\(\s*([\w\s,]*)\s*\)\s*->(.+)$/.exec(str)) {
+      names = m[1].split(/\s*,\s*/);
+      str = m[2];
+    } else {
+      names = ['$', '$1', '$2', '$3'];
+      str = str.replace('->', '');
     }
 
-    str = str.replace('->', '');
-    str = str.replace(/(\$)/g, 'arguments[0]');
-    str = str.replace(/\#(\d)/g, 'arguments[$1]');
-    str = 'return function () { return ' + str + ' ;};';
+    if (!names) {
+      throw Error('Error function parsing');
+    }
+    fn = 'return function (' + names.join(',') + ') { return ' + str + ' ;};';
+    return new Function('_', 'arg', fn)(_, arg);
 
-    return new Function('_', 'arg', str)(_, arg).bind(arg);
   }
   // A mostly-internal function to generate callbacks that can be applied
   // to each element in a collection, returning the desired result — either

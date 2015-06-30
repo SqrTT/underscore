@@ -2,9 +2,7 @@
   var _ = typeof require == 'function' ? require('..') : window._;
 
   QUnit.module('Collections');
-  test('labmda', function() {
-    strictEqual(_.filter([1, 2, 3, 4, 5], '-> $ <= 2').length, 2, 'should filter element');
-  });
+
   test('each', function() {
     _.each([1, 2, 3], function(num, i) {
       equal(num, i + 1, 'each iterators provide value and iteration count');
