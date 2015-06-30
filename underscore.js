@@ -88,11 +88,11 @@
     } else if (typeof str === 'function') {
       return str;
     }
-    
+
     str = str.replace('->', '');
     str = str.replace(/(\$)/g, 'arguments[0]');
     str = str.replace(/\#(\d)/g, 'arguments[$1]');
-    str = 'return function () { return ' + str + ';   };';
+    str = 'return function () { return ' + str + ' ;};';
 
     return new Function('_', 'arg', str)(_, arg).bind(arg);
   }
