@@ -206,7 +206,7 @@ _(numbers).filter('-> $ < 5').each('->console.log($)');
 As you will see, most predicator functions have similar arguments list (except comparers).
 In most cases, the first argument means 'value', the second means 'key', and the last means 'external argument'.
 
-
+-------------------------------------------------------------
 
 Underscore.js is a utility-belt library for JavaScript that provides
 support for the usual functional suspects (each, map, reduce, filter...)
