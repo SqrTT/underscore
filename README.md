@@ -13,9 +13,17 @@
 
 #Improved version for Demandware
 
-List of changes:
-* added method `_.prop`
+List of main changes:
+* iterative methods works properly with demandware iterators, `_.each(basket.productLineItems, function (productLineItem) {...})` etc.
+* iterative methods support second argument as string and can interpolate is as lambda function
+* added method `_.prop` - allows safety get deep property `_.prop(pdict, 'session.customer.profile.custom.isOurGuy')` return `isOurGuy` only if whole path exist.
+* methods which use `_.property` also works through `_.prop`, that means you can write `_.pluck(basket.productLineItems, 'product.custom.surprise')`
+* removed unsupported by DW async methods
+* changed delimiters for templates to `{{ | }}` as `<% | %>` throw error in DW template engine.
 
+## Lambda
+
+Lambda is borrowed from `form.js` project and is useful in case if short function should be feed to methods like `each`, `map`, `filter` etc.
 
 Underscore.js is a utility-belt library for JavaScript that provides
 support for the usual functional suspects (each, map, reduce, filter...)
