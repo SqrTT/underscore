@@ -200,7 +200,7 @@ The sample above can be shorten as below.
 
 ```javascript
 var numbers = [ 5, 4, 1, 3, 9, 8, 6, 7, 2, 0 ];
-_(numbers).filter('-> $ < 5').each('console.log($)');
+_(numbers).filter('-> $ < 5').each('->console.log($)');
 ```
 
 As you will see, most predicator functions have similar arguments list (except comparers).
