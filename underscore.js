@@ -978,6 +978,36 @@
     return object;
   };
 
+  _.propSet = function propSet(obj, key, value) {
+    var parts = (key + '').split('.'),
+      object = obj,
+      part;
+
+    while (parts.length > 1) {
+      part = parts.shift();
+      if (typeof object === 'object' && object !== null && part in object) {
+        object = object[part];
+      } else {
+        object = object[part] = {};
+      }
+    }
+    object[parts.shift()] = value;
+    return obj;
+  }
+
+  _.merge = function(dst, src, maps) {
+    dst = dst || {};
+    src = src || {};
+    var value;
+    _.each(maps, function(s, d) {
+      value = _.prop(src, s);
+      if (typeof value !== 'undefined') {
+        _.propSet(dst, d, value);
+      }
+    });
+    return dst;
+  }
+
   _.restArgs = restArgs;
 
   // Object Functions

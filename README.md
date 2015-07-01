@@ -17,11 +17,12 @@ List of main changes:
 * iterative methods works properly with demandware iterators, `_.each(basket.productLineItems, function (productLineItem) {...})` etc.
 * iterative methods support second argument as string and can interpolate is as lambda expression (described bellow).
 * added method `_.prop` - allows safety get deep property `_.prop(pdict, 'session.customer.profile.custom.isOurGuy')` return `isOurGuy` only if whole path exist or `undefined` in another case (will not throw error).
+* added method `merge` - allows one method to another deeply by provided properties.
 * methods which use `_.property` also works through `_.prop`, that means you can write `_.pluck(basket.productLineItems, 'product.custom.surprise')` and get array of `surprise`s.
 * removed unsupported by DW async methods `delay`, `denounce`.
 * changed delimiters for templates to `{{ | }}` as `<% | %>` throw error in DW template engine.
 
-## Method `prop`
+## Method `prop(object, key, defaults)`
 Some times is boring to write ton of condition just to get one deep property from object.
 ```javascript
 if (pdict && pdict.session && pdict.session.customer &&
@@ -35,7 +36,69 @@ if (_.prop(pdict, 'session.customer.profile.custom.isOurGuy') {
 	// .. do some magic
 }
 ```
+`prop` also have third parameter if you set it than that value will be returned in case if some object is missing in path.
 
+## Method `merge(destinationObject, sourceObject, mapObject)`
+Copy properties from **sourceObject** to **destinationObject** by following the
+mapping defined by **mapObject**
+
+ - **sourceObject** is the object FROM which properties will be copied.
+ - **destinationObject** is the object TO which properties will be copied.
+ - **mapObject** is the object which defines how properties are copied from
+**sourceObject** to **destinationObject**
+
+example
+------------
+
+```javascript
+
+var obj = {
+  "sku" : "12345",
+  "upc" : "99999912345X",
+  "title" : "Test Item",
+  "description" : "Description of test item",
+  "length" : 5,
+  "width" : 2,
+  "height" : 8,
+  "inventory" : {
+    "onHandQty" : 12
+  }
+};
+
+var map = {
+  "sku" : "Envelope.Request.Item.SKU",
+  "upc" : "Envelope.Request.Item.UPC",
+  "title" : "Envelope.Request.Item.ShortTitle",
+  "description" : "Envelope.Request.Item.ShortDescription",
+  "length" : "Envelope.Request.Item.Dimensions.Length",
+  "width" : "Envelope.Request.Item.Dimensions.Width",
+  "height" : "Envelope.Request.Item.Dimensions.Height",
+  "inventory.onHandQty" : "Envelope.Request.Item.Inventory"
+};
+
+var result = _.merge(obj, {}, map);
+
+/*
+{
+  Envelope: {
+    Request: {
+      Item: {
+        SKU: "12345",
+        UPC: "99999912345X",
+        ShortTitle: "Test Item",
+        ShortDescription: "Description of test item",
+        Dimensions: {
+          Length: 5,
+          Width: 2,
+          Height: 8
+        },
+        Inventory: 12
+      }
+    }
+  }
+};
+*/
+```
 
 ## Lambda expression
 
