@@ -9,7 +9,7 @@
                                                                                   \ \____/
                                                                                    \/___/
 
-![build status](https://travis-ci.org/SqrTT/underscore.svg?branch=misterDW)
+[![Build Status](https://travis-ci.org/SqrTT/underscore.svg?branch=misterDW)](https://travis-ci.org/SqrTT/underscore)
 
 #Improved Underscore version for Demandware
 
