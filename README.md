@@ -66,17 +66,18 @@ var obj = {
 };
 
 var map = {
-  "sku" : "Envelope.Request.Item.SKU",
-  "upc" : "Envelope.Request.Item.UPC",
-  "title" : "Envelope.Request.Item.ShortTitle",
-  "description" : "Envelope.Request.Item.ShortDescription",
-  "length" : "Envelope.Request.Item.Dimensions.Length",
-  "width" : "Envelope.Request.Item.Dimensions.Width",
-  "height" : "Envelope.Request.Item.Dimensions.Height",
-  "inventory.onHandQty" : "Envelope.Request.Item.Inventory"
+  // path in dst : path in src
+  "Envelope.Request.Item.SKU" : "sku",
+  "Envelope.Request.Item.UPC" : "upc",
+  "Envelope.Request.Item.ShortTitle" : "title",
+  "Envelope.Request.Item.ShortDescription" : "description",
+  "Envelope.Request.Item.Dimensions.Length" : "length",
+  "Envelope.Request.Item.Dimensions.Width" : "width",
+  "Envelope.Request.Item.Dimensions.Height" : "height",
+  "Envelope.Request.Item.Inventory" : "inventory.onHandQty"
 };
 
-var result = _.merge(obj, {}, map);
+var result = _.merge({}, obj, map);
 
 /*
 {
