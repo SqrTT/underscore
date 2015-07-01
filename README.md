@@ -11,7 +11,7 @@
 
 ![build status](https://travis-ci.org/SqrTT/underscore.svg?branch=misterDW)
 
-#Improved version for Demandware
+#Improved Underscore version for Demandware
 
 List of main changes:
 * iterative methods works properly with demandware iterators, `_.each(basket.productLineItems, function (productLineItem) {...})` etc.
