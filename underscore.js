@@ -993,12 +993,13 @@
     }
     object[parts.shift()] = value;
     return obj;
-  }
+  };
 
   _.merge = function(dst, src, maps) {
     dst = dst || {};
     src = src || {};
     var value;
+
     _.each(maps, function(s, d) {
       value = _.prop(src, s);
       if (typeof value !== 'undefined') {
@@ -1006,7 +1007,7 @@
       }
     });
     return dst;
-  }
+  };
 
   _.restArgs = restArgs;
 
