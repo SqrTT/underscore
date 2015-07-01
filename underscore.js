@@ -86,7 +86,11 @@
     if (!str) return null;
     if (typeof str === 'function') return str;
 
-    var names, fn;
+    var names, fn,
+      args = 'var $ = arguments[0],$$ = arguments[1],' +
+      _.map(_.range(10), function(value) {
+          return '$' + value + ' = arguments[' + value + ']';
+        }).join(',') + ';';
 
     var m = /^\s*(\w+)\s*->(.+)$/.exec(str);
     if (m) {
@@ -96,15 +100,11 @@
       names = m[1].split(/\s*,\s*/);
       str = m[2];
     } else {
-      names = ['$0', '$1', '$2', '$3', '$4', '$5', '$6'];
-      str = ';var $ = $0;' + str;
+      names = [];
       str = str.replace('->', '');
     }
 
-    if (!names) {
-      throw Error('Error function parsing');
-    }
-    fn = 'return function (' + names.join(',') + ') { return ' + str + ' ;};';
+    fn = 'return function (' + names.join(',') + ') { ; ' + args + '; return ' + str + ' ;};';
     return new Function('_', 'arg', fn)(_, arg);
 
   }

@@ -21,10 +21,25 @@ List of main changes:
 * removed unsupported by DW async methods `delay`, `denounce`.
 * changed delimiters for templates to `{{ | }}` as `<% | %>` throw error in DW template engine.
 
+## Method `prop`
+Some times is boring to write ton of condition just to get one deep property from object.
+```javascript
+if (pdict && pdict.session && pdict.session.customer &&
+	pdict.session.customer.profile && pdict.session.customer.profile.custom.isOurGuy) {
+	// .. do some magic
+}
+```
+To solve this problem here is this method. Its pretty useful:
+```javascript
+if (_.prop(pdict, 'session.customer.profile.custom.isOurGuy') {
+	// .. do some magic
+}
+```
+
+
 ## Lambda expression
 
-Lambda is borrowed from [form.js|https://fromjs.codeplex.com/] project and is useful in case if short function should be feed to methods like `each`, `map`, `filter` etc.
-## Lambda expression
+Lambda is borrowed from [form.js](https://fromjs.codeplex.com/) project and is useful in case if short function should be feed to methods like `each`, `map`, `filter` etc.
 
 It will be so tiring work to write every nested function every time. It can be evaded by using lambda expression.
 Its format is almost same as C#'s.
@@ -49,7 +64,7 @@ Parentheses can be omitted when it has only one argument.
 arg1 -> arg1 * 3
 ```
 
-Now let's apply it into real JavaScript code.
+Now let's apply it into real code.
 
 ```javascript
 var numbers = [ 5, 4, 1, 3, 9, 8, 6, 7, 2, 0 ];
@@ -68,12 +83,12 @@ The example above can be re-written as below.
 ```javascript
 var numbers = [ 5, 4, 1, 3, 9, 8, 6, 7, 2, 0 ];
 
-from(numbers)
-    .where('value -> value < 5')
+_(numbers)
+    .filter('value -> value < 5')
     .each('value -> console.log(value)');
 ```
 
-## Omitting argument list
+### Omitting argument list
 
 Lambda expression can be shorten more by omitting argument list.
 But how can it be used without any argument specified?
@@ -82,8 +97,8 @@ There is provides several abbreviations which can be used in this case.
 | Abbreviation | Meaning                          |
 | ------------ | -------------------------------- |
 | #n           | The _n_-th argument (zero based) |
-| $            | The first argument (same as #0)  |
-
+| $            | The first argument (same as $0)  |
+| $$           | The second argument (same as $1) |
 
 For example,
 
@@ -103,13 +118,13 @@ or
 -> $ * $1 + $2 * $3
 ```
 
-Let's apply it into JavaScript code.
+Let's apply it into code.
 
 ```javascript
 var numbers = [ 5, 4, 1, 3, 9, 8, 6, 7, 2, 0 ];
 
 _(numbers)
-    .where(function (value) {
+    .filter(function (value) {
         return value < 5;
     })
     .each(function (value) {
@@ -121,7 +136,7 @@ The sample above can be shorten as below.
 
 ```javascript
 var numbers = [ 5, 4, 1, 3, 9, 8, 6, 7, 2, 0 ];
-_(numbers).where('-> $ < 5').each('console.log($)');
+_(numbers).filter('-> $ < 5').each('console.log($)');
 ```
 
 As you will see, most predicator functions have similar arguments list (except comparers).
