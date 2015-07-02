@@ -15,12 +15,12 @@
 
 List of main changes:
 * iterative methods works properly with demandware iterators, `_.each(basket.productLineItems, function (productLineItem) {...})` etc.
-* iterative methods support second argument as string and can interpolate is as lambda expression (described bellow).
+* iterative methods support second argument as string and can interpolate it as lambda expression (described bellow).
 * added method `_.prop` - allows safety get deep property `_.prop(pdict, 'session.customer.profile.custom.isOurGuy')` return `isOurGuy` only if whole path exist or `undefined` in another case (will not throw error).
-* added method `merge` - allows one method to another deeply by provided properties.
-* methods which use `_.property` also works through `_.prop`, that means you can write `_.pluck(basket.productLineItems, 'product.custom.surprise')` and get array of `surprise`s.
+* added method `merge` - allows copy properties from one to another deeply by provided properties.
+* methods which use `_.property` also works through `_.prop`, that means you can write `_.pluck(basket.productLineItems, 'product.custom.surprise')` and get array of `surprise's`.
 * removed unsupported by DW async methods `delay`, `denounce`.
-* changed delimiters for templates to `{{ | }}` as `<% | %>` throw error in DW template engine.
+* changed delimiters for templates to `{{ | }}` (as `<% | %>` throw error in DW template engine).
 
 ## Method `prop(object, key, defaults)`
 Some times is boring to write ton of condition just to get one deep property from object.
