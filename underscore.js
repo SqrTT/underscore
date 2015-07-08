@@ -177,7 +177,7 @@
   };
 
   function closeIter(iter) {
-    if (iter && iter.close) {
+    if (iter && 'close' in iter) {
       iter.close();
     }
   }
@@ -1694,4 +1694,4 @@
       return _;
     });
   }
-}());
+}(this));
