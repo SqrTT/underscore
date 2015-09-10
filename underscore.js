@@ -425,7 +425,7 @@
   // Return the maximum element (or element-based computation).
   _.max = function(obj, iteratee, context) {
     var result = -Infinity, lastComputed = -Infinity, computed;
-    if (iteratee == null && obj != null) {
+    if (iteratee == null || (typeof iteratee == 'number' && typeof obj[0] != 'object') && obj != null) {
       _.each(obj, function(value) {
         if (value > result) {
           result = value;
@@ -447,7 +447,7 @@
   // Return the minimum element (or element-based computation).
   _.min = function(obj, iteratee, context) {
     var result = Infinity, lastComputed = Infinity, computed;
-    if (iteratee == null && obj != null) {
+    if (iteratee == null || (typeof iteratee == 'number' && typeof obj[0] != 'object') && obj != null) {
       _.each(obj, function(value) {
         if (value < result) {
           result = value;

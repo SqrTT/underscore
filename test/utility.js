@@ -35,7 +35,7 @@
           content + 'this.underscore = this._.noConflict();',
           filename
         );
-        var context = {_: 'oldvalue'};
+        var context = {_: 'oldvalue', module:{exports: {}}};
         sandbox.runInNewContext(context);
         assert.equal(context._, 'oldvalue');
         assert.equal(context.underscore.VERSION, _.VERSION);
