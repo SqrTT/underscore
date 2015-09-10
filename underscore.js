@@ -8,10 +8,12 @@
   // Baseline setup
   // --------------
 
-  // Establish the root object, `window` (`self`) in the browser, or `global` on the server.
-  // We use `self` instead of `window` for `WebWorker` support.
-  var root = typeof self === 'object' && self.self === self && self ||
-            typeof global === 'object' && global.global === global && global;
+  // Establish the root object, `window` (`self`) in the browser, `global`
+  // on the server, or `this` in some virtual machines. We use `self`
+  // instead of `window` for `WebWorker` support.
+  var root = typeof self == 'object' && self.self === self && self ||
+            typeof global == 'object' && global.global === global && global ||
+            this;
 
   // Save the previous value of the `_` variable.
   var previousUnderscore = root._;
@@ -46,8 +48,8 @@
   // Export the Underscore object for **Node.js**, with
   // backwards-compatibility for their old module API. If we're in
   // the browser, add `_` as a global object.
-  if (typeof exports !== 'undefined') {
-    if (typeof module !== 'undefined' && module.exports) {
+  if (typeof exports != 'undefined') {
+    if (typeof module != 'undefined' && module.exports) {
       exports = module.exports = _;
     }
     exports._ = _;
@@ -67,9 +69,8 @@
       case 1: return function(value) {
         return func.call(context, value);
       };
-      case 2: return function(value, other) {
-        return func.call(context, value, other);
-      };
+      // The 2-parameter case has been omitted only because no current consumers
+      // made use of it.
       case 3: return function(value, index, collection) {
         return func.call(context, value, index, collection);
       };
@@ -84,13 +85,14 @@
 
   // A mostly-internal function to generate callbacks that can be applied
   // to each element in a collection, returning the desired result — either
-  // identity, an arbitrary callback, a property matcher, or a property accessor.
+  // `identity`, an arbitrary callback, a property matcher, or a property accessor.
   var cb = function(value, context, argCount) {
     if (value == null) return _.identity;
     if (_.isFunction(value)) return optimizeCb(value, context, argCount);
     if (_.isObject(value)) return _.matcher(value);
     return _.property(value);
   };
+
   _.iteratee = function(value, context) {
     return cb(value, context, Infinity);
   };
@@ -102,8 +104,7 @@
     return function() {
       var length = Math.max(arguments.length - startIndex, 0);
       var rest = Array(length);
-      var index;
-      for (index = 0; index < length; index++) {
+      for (var index = 0; index < length; index++) {
         rest[index] = arguments[index + startIndex];
       }
       switch (startIndex) {
@@ -137,7 +138,7 @@
   };
 
   // Helper for collection methods to determine whether a collection
-  // should be iterated as an array or as an object
+  // should be iterated as an array or as an object.
   // Related: http://people.mozilla.org/~jorendorff/es6-draft.html#sec-tolength
   // Avoids a very nasty iOS 8 JIT bug on ARM-64. #2094
   var MAX_ARRAY_INDEX = Math.pow(2, 53) - 1;
@@ -305,7 +306,7 @@
   _.max = function(obj, iteratee, context) {
     var result = -Infinity, lastComputed = -Infinity,
         value, computed;
-    if (iteratee == null && obj != null) {
+    if (iteratee == null || (typeof iteratee == 'number' && typeof obj[0] != 'object') && obj != null) {
       obj = isArrayLike(obj) ? obj : _.values(obj);
       for (var i = 0, length = obj.length; i < length; i++) {
         value = obj[i];
@@ -330,7 +331,7 @@
   _.min = function(obj, iteratee, context) {
     var result = Infinity, lastComputed = Infinity,
         value, computed;
-    if (iteratee == null && obj != null) {
+    if (iteratee == null || (typeof iteratee == 'number' && typeof obj[0] != 'object') && obj != null) {
       obj = isArrayLike(obj) ? obj : _.values(obj);
       for (var i = 0, length = obj.length; i < length; i++) {
         value = obj[i];
@@ -380,12 +381,13 @@
 
   // Sort the object's values by a criterion produced by an iteratee.
   _.sortBy = function(obj, iteratee, context) {
+    var index = 0;
     iteratee = cb(iteratee, context);
-    return _.pluck(_.map(obj, function(value, index, list) {
+    return _.pluck(_.map(obj, function(value, key, list) {
       return {
         value: value,
-        index: index,
-        criteria: iteratee(value, index, list)
+        index: index++,
+        criteria: iteratee(value, key, list)
       };
     }).sort(function(left, right) {
       var a = left.criteria;
@@ -694,6 +696,19 @@
     }
 
     return range;
+  };
+
+  // Split an **array** into several arrays containing **count** or less elements
+  // of initial array
+  _.chunk = function(array, count) {
+    if (count == null || count < 1) return [];
+
+    var result = [];
+    var i = 0, length = array.length;
+    while (i < length) {
+      result.push(slice.call(array, i, i += count));
+    }
+    return result;
   };
 
   // Function (ahem) Functions
@@ -1008,9 +1023,10 @@
   };
 
   // An internal function for creating assigner functions.
-  var createAssigner = function(keysFunc, undefinedOnly) {
+  var createAssigner = function(keysFunc, defaults) {
     return function(obj) {
       var length = arguments.length;
+      if (defaults) obj = Object(obj);
       if (length < 2 || obj == null) return obj;
       for (var index = 1; index < length; index++) {
         var source = arguments[index],
@@ -1018,7 +1034,7 @@
             l = keys.length;
         for (var i = 0; i < l; i++) {
           var key = keys[i];
-          if (!undefinedOnly || obj[key] === void 0) obj[key] = source[key];
+          if (!defaults || obj[key] === void 0) obj[key] = source[key];
         }
       }
       return obj;
@@ -1133,7 +1149,7 @@
     if (a !== a) return b !== b;
     // Exhaust primitive checks
     var type = typeof a;
-    if (type !== 'function' && type !== 'object' && typeof b !== 'object') return false;
+    if (type !== 'function' && type !== 'object' && typeof b != 'object') return false;
     return deepEq(a, b, aStack, bStack);
   };
 
@@ -1271,8 +1287,9 @@
   }
 
   // Optimize `isFunction` if appropriate. Work around some typeof bugs in old v8,
-  // IE 11 (#1621), and in Safari 8 (#1929).
-  if (typeof /./ != 'function' && typeof Int8Array != 'object') {
+  // IE 11 (#1621), Safari 8 (#1929), and PhantomJS (#2236).
+  var nodelist = root.document && root.document.childNodes;
+  if (typeof /./ != 'function' && typeof Int8Array != 'object' && typeof nodelist != 'function') {
     _.isFunction = function(obj) {
       return typeof obj == 'function' || false;
     };
@@ -1283,9 +1300,9 @@
     return isFinite(obj) && !isNaN(parseFloat(obj));
   };
 
-  // Is the given value `NaN`? (NaN is the only number which does not equal itself).
+  // Is the given value `NaN`?
   _.isNaN = function(obj) {
-    return _.isNumber(obj) && obj !== +obj;
+    return _.isNumber(obj) && isNaN(obj);
   };
 
   // Is a given value a boolean?
@@ -1582,7 +1599,7 @@
   // popular enough to be bundled in a third party lib, but not be part of
   // an AMD load request. Those cases could generate an error when an
   // anonymous define() is called outside of a loader request.
-  if (typeof define === 'function' && define.amd) {
+  if (typeof define == 'function' && define.amd) {
     define('underscore', [], function() {
       return _;
     });
