@@ -10,8 +10,7 @@
 
   // Establish the root object, `window` (`self`) in the browser, or `global` on the server.
   // We use `self` instead of `window` for `WebWorker` support.
-  var root = typeof self === 'object' && self.self === self && self ||
-            typeof global === 'object' && global.global === global && global;
+  var root = this;
 
   // Save the previous value of the `_` variable.
   var previousUnderscore = root._;
@@ -1694,4 +1693,4 @@
       return _;
     });
   }
-}(this));
+}(module.exports));
