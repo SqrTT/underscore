@@ -3,21 +3,9 @@
 
   QUnit.module('Demandware tool');
 
-  test('labmda', function(assert) {
-    var testArr = [1, 2, 3, 4, 5];
-    assert.strictEqual(_.filter(testArr, '-> $ <= 2').length, 2,
-      'should filter element');
-    assert.strictEqual(_.filter(testArr, 'val -> val == 2').length, 1,
-      'should filter element with value name');
-    assert.strictEqual(_.filter(testArr, '(val, idx) -> idx == 3').length, 1,
-      'should filter element with second value name works too');
-    testArr[5] = {complex: {obj: {value: 1}}};
-    assert.strictEqual(_.filter(testArr, ' val -> _.prop(val, "complex.obj.value")').length, 1,
-      'should filter element with underscore in scope');
-  });
-  test('_.propSet', function(assert) {
+  test('_.set', function(assert) {
     var ob = {};
-    _.propSet(ob, 'some.deep.property.into.object', 2);
+    _.set(ob, 'some.deep.property.into.object', 2);
     assert.strictEqual(ob.some.deep.property.into.object, 2, 'should set deep prop');
 
   });

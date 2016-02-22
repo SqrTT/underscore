@@ -14,8 +14,8 @@
     "type": "git",
     "url": "git://github.com/jashkenas/underscore.git"
   },
-  "main": "underscore.js",
-  "version": "1.8.3",
+  "main": "./underscore.js",
+  "version": "1.8.3dw",
   "devDependencies": {
     "coveralls": "^2.11.2",
     "docco": "*",

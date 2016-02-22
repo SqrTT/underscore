@@ -2,14 +2,14 @@
 //     http://underscorejs.org
 //     (c) 2009-2015 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
 //     Underscore may be freely distributed under the MIT license.
-
+/* jshint white: false, curly: false*/
 (function() {
 
   // Baseline setup
   // --------------
 
   // Establish the root object
-  var root = this;
+  var root = module.exports;
 
 
   // Save the previous value of the `_` variable.
@@ -22,18 +22,7 @@
   var
     push = ArrayProto.push,
     slice = ArrayProto.slice,
-    toString = ObjProto.toString,
-    hasOwnProperty = ObjProto.hasOwnProperty;
-
-  // All **ECMAScript 5** native function implementations that we hope to use
-  // are declared here.
-  var
-    nativeIsArray = Array.isArray,
-    nativeKeys = Object.keys,
-    nativeCreate = Object.create;
-
-  // Naked function reference for surrogate-prototype-swapping.
-  var Ctor = function(){};
+    toString = ObjProto.toString;
 
   // Create a safe reference to the Underscore object for use below.
   var _ = function(obj) {
@@ -45,14 +34,7 @@
   // Export the Underscore object for **Node.js**, with
   // backwards-compatibility for their old module API. If we're in
   // the browser, add `_` as a global object.
-  if (typeof exports != 'undefined') {
-    if (typeof module != 'undefined' && module.exports) {
-      exports = module.exports = _;
-    }
-    exports._ = _;
-  } else {
-    root._ = _;
-  }
+  exports = module.exports = _;
 
   // Current version.
   _.VERSION = '1.8.3';
@@ -60,64 +42,12 @@
   // Internal function that returns an efficient (for current engines) version
   // of the passed-in callback, to be repeatedly applied in other Underscore
   // functions.
-  var optimizeCb = function(func, context, argCount) {
-    if (context === void 0) return func;
-    switch (argCount == null ? 3 : argCount) {
-      case 1: return function(value) {
-        return func.call(context, value);
-      };
-      // The 2-parameter case has been omitted only because no current consumers
-      // made use of it.
-      case 3: return function(value, index, collection) {
-        return func.call(context, value, index, collection);
-      };
-      case 4: return function(accumulator, value, index, collection) {
-        return func.call(context, accumulator, value, index, collection);
-      };
-    }
-    return function() {
-      return func.apply(context, arguments);
-    };
-  };
+  var optimizeCb = require('./optimizeCb');
 
-  function lambdaParse(str, arg) {
-    if (!str) return null;
-    if (typeof str === 'function') return str;
-
-    var names, fn,
-      args = 'var $ = arguments[0],$$ = arguments[1],' +
-      _.map(_.range(10), function(value) {
-          return '$' + value + ' = arguments[' + value + ']';
-        }).join(',') + ';';
-
-    var m = /^\s*(\w+)\s*->(.+)$/.exec(str);
-    if (m) {
-      names = [m[1]];
-      str = m[2];
-    } else if (m = /^\s*\(\s*([\w\s,]*)\s*\)\s*->(.+)$/.exec(str)) {
-      names = m[1].split(/\s*,\s*/);
-      str = m[2];
-    } else {
-      names = [];
-      str = str.replace('->', '');
-    }
-
-    fn = 'return function (' + names.join(',') + ') { ; ' + args + '; return ' + str + ' ;};';
-    return new Function('_', 'arg', fn)(_, arg);
-
-  }
   // A mostly-internal function to generate callbacks that can be applied
   // to each element in a collection, returning the desired result — either
   // `identity`, an arbitrary callback, a property matcher, or a property accessor.
-  var cb = function(value, context, argCount) {
-    if (value == null) return _.identity;
-    if (_.isFunction(value)) return optimizeCb(value, context, argCount);
-    if (_.isObject(value)) return _.matcher(value);
-    if (_.isString(value) && value.indexOf('->') !== -1) {
-      return lambdaParse(value, context);
-    }
-    return _.property(value);
-  };
+  var cb = require('./cb');
 
   _.iteratee = function(value, context) {
     return cb(value, context, Infinity);
@@ -125,43 +55,15 @@
 
   // Similar to ES6's rest param (http://ariya.ofilabs.com/2013/03/es6-and-rest-parameter.html)
   // This accumulates the arguments passed into an array, after a given index.
-  var restArgs = function(func, startIndex) {
-    startIndex = startIndex == null ? func.length - 1 : +startIndex;
-    return function() {
-      var length = Math.max(arguments.length - startIndex, 0);
-      var rest = Array(length);
-      for (var index = 0; index < length; index++) {
-        rest[index] = arguments[index + startIndex];
-      }
-      switch (startIndex) {
-        case 0: return func.call(this, rest);
-        case 1: return func.call(this, arguments[0], rest);
-        case 2: return func.call(this, arguments[0], arguments[1], rest);
-      }
-      var args = Array(startIndex + 1);
-      for (index = 0; index < startIndex; index++) {
-        args[index] = arguments[index];
-      }
-      args[startIndex] = rest;
-      return func.apply(this, args);
-    };
-  };
+  var restArgs = require('./restArgs');
 
   // An internal function for creating a new object that inherits from another.
   var baseCreate = function(prototype) {
     if (!_.isObject(prototype)) return {};
-    if (nativeCreate) return nativeCreate(prototype);
-    Ctor.prototype = prototype;
-    var result = new Ctor;
-    Ctor.prototype = null;
-    return result;
+    return Object.create(prototype);
   };
 
-  var property = function(key) {
-    return function(obj) {
-      return obj == null ? void 0 : _.prop(obj, key);
-    };
-  };
+  var property = require('./property');
 
   // Helper for collection methods to determine whether a collection
   // should be iterated as an array or as an object.
@@ -171,90 +73,8 @@
   var getLength = property('length');
   var isArrayLike = function(collection) {
     var length = getLength(collection);
-    return typeof length == 'number' && length >= 0 && length <= MAX_ARRAY_INDEX;
+    return typeof length === 'number' && length >= 0 && length <= MAX_ARRAY_INDEX;
   };
-
-  function closeIter(iter) {
-    if (iter && 'close' in iter) {
-      iter.close();
-    }
-  }
-
-  function iterateDW(collection, callback, firstElfn) {
-    var iter,
-      keys,
-      value,
-      result,
-      length,
-      i,
-      count = 0,
-      callfirstElfn = firstElfn && function(v) {
-        if (firstElfn) {
-          callfirstElfn = null;
-          firstElfn(v);
-          return true;
-        }
-      };
-
-    callback = lambdaParse(callback);
-
-    if (typeof collection === 'object' && collection !== null) {
-      if ('iterator' in collection && typeof collection.iterator === 'function') {
-        // suppose that collection is DW collection
-        iter = collection.iterator();
-        while (iter.hasNext()) {
-          value = iter.next();
-          if (callfirstElfn && callfirstElfn(value)) {
-            count++;
-            continue;
-          }
-          result = callback(value, count++, collection);
-          if (result === false) {
-            closeIter(iter);
-            return result;
-          }
-        }
-        closeIter(iter);
-      } else if ('hasNext' in collection && typeof collection.hasNext === 'function') {
-        // suppose that collection is DW iterator
-        while (collection.hasNext()) {
-          value = collection.next();
-          if (callfirstElfn && callfirstElfn(value)) {
-            count++;
-            continue;
-          }
-          result = callback(value, count++, collection);
-          if (result === false) {
-            return result;
-          }
-        }
-        closeIter(collection);
-      } else if (isArrayLike(collection)) {
-        // suppose that collection is array
-        for (i = 0, length = collection.length; i < length; i++) {
-          if (callfirstElfn && callfirstElfn(collection[i])) {
-            continue;
-          }
-          result = callback(collection[i], i, collection);
-          if (result === false) {
-            return result;
-          }
-        }
-      } else {
-        // suppose that collection is plain object
-        keys = _.keys(collection);
-        for (i = 0, length = keys.length; i < length; i++) {
-          if (callfirstElfn && callfirstElfn(collection[keys[i]])) {
-            continue;
-          }
-          result = callback(collection[keys[i]], keys[i], collection);
-          if (result === false) {
-            return result;
-          }
-        }
-      }
-    }
-  }
 
   // Collection Functions
   // --------------------
@@ -262,23 +82,10 @@
   // The cornerstone, an `each` implementation, aka `forEach`.
   // Handles raw objects in addition to array-likes. Treats all
   // sparse array-likes as if they were dense.
-  _.each = _.forEach = function(obj, iteratee, context) {
-    iteratee = optimizeCb(iteratee, context);
-    iterateDW(obj, function() {
-      iteratee.apply(null, arguments);
-    });
-    return obj;
-  };
+  _.each = _.forEach = require('./forEach');
 
   // Return the results of applying the iteratee to each element.
-  _.map = _.collect = function(obj, iteratee, context) {
-    iteratee = cb(iteratee, context);
-    var results = [];
-    iterateDW(obj, function() {
-      results.push(iteratee.apply(null, arguments));
-    });
-    return results;
-  };
+  _.map = _.collect = require('./map');
 
   // Create a reducing function iterating left or right.
   var createReduce = function(dir) {
@@ -308,52 +115,17 @@
 
   // **Reduce** builds up a single result from a list of values, aka `inject`,
   // or `foldl`.
-  _.reduce = _.foldl = _.inject = function(obj, iteratee, memo, context) {
-    iteratee = optimizeCb(iteratee, context, 4);
-    function initial(value) {
-      memo = value;
-    }
-    if (typeof memo === 'undefined') {
-      if (obj == null) {
-        return void 0;
-      }
-      iterateDW(obj, function(value, key, collection) {
-        memo = iteratee(memo, value, key, collection);
-      }, initial);
-    } else {
-      iterateDW(obj, function(value, key, collection) {
-        memo = iteratee(memo, value, key, collection);
-      });
-    }
-    return memo;
-  };
+  _.reduce = _.foldl = _.inject = require('./reduce');
 
   // The right-associative version of reduce, also known as `foldr`.
   _.reduceRight = _.foldr = createReduce(-1);
 
   // Return the first value which passes a truth test. Aliased as `detect`.
-  _.find = _.detect = function(obj, predicate, context) {
-    var result;
-    predicate = cb(predicate, context);
-    iterateDW(obj, function(element, index, collection) {
-      if (predicate(element, index, collection)) {
-        result = element;
-        return false;
-      }
-    });
-    return result;
-  };
+  _.find = _.detect = require('./find');
 
   // Return all the elements that pass a truth test.
   // Aliased as `select`.
-  _.filter = _.select = function(obj, predicate, context) {
-    var results = [];
-    predicate = cb(predicate, context);
-    _.each(obj, function(value, index, list) {
-      if (predicate(value, index, list)) results.push(value);
-    });
-    return results;
-  };
+  _.filter = _.select = require('./filter');
 
   // Return all the elements for which a truth test fails.
   _.reject = function(obj, predicate, context) {
@@ -362,31 +134,11 @@
 
   // Determine whether all of the elements match a truth test.
   // Aliased as `all`.
-  _.every = _.all = function(obj, predicate, context) {
-    predicate = cb(predicate, context);
-    var result = true;
-    _.find(obj, function(value, key) {
-      if (!predicate(value, key, obj)) {
-        result = false;
-        return true;
-      }
-    }, context);
-    return result;
-  };
+  _.every = _.all = require('./every');
 
   // Determine if at least one element in the object matches a truth test.
   // Aliased as `any`.
-  _.some = _.any = function(obj, predicate, context) {
-    predicate = cb(predicate, context);
-    var result = false;
-    _.find(obj, function(value, key) {
-      if (predicate(value, key, obj)) {
-        result = true;
-        return true;
-      }
-    }, context);
-    return result;
-  };
+  _.some = _.any = require('./some');
 
   // Determine if the array or object contains a given item (using `===`).
   // Aliased as `includes` and `include`.
@@ -406,9 +158,7 @@
   });
 
   // Convenience version of a common use case of `map`: fetching a property.
-  _.pluck = function(obj, key) {
-    return _.map(obj, _.property(key));
-  };
+  _.pluck = require('./pluck');
 
   // Convenience version of a common use case of `filter`: selecting only objects
   // containing specific `key:value` pairs.
@@ -423,48 +173,10 @@
   };
 
   // Return the maximum element (or element-based computation).
-  _.max = function(obj, iteratee, context) {
-    var result = -Infinity, lastComputed = -Infinity, computed;
-    if (iteratee == null || (typeof iteratee == 'number' && typeof obj[0] != 'object') && obj != null) {
-      _.each(obj, function(value) {
-        if (value > result) {
-          result = value;
-        }
-      });
-    } else {
-      iteratee = cb(iteratee, context);
-      _.each(obj, function(v, index, list) {
-        computed = iteratee(v, index, list);
-        if (computed > lastComputed || computed === -Infinity && result === -Infinity) {
-          result = v;
-          lastComputed = computed;
-        }
-      });
-    }
-    return result;
-  };
+  _.max = require('./max');
 
   // Return the minimum element (or element-based computation).
-  _.min = function(obj, iteratee, context) {
-    var result = Infinity, lastComputed = Infinity, computed;
-    if (iteratee == null || (typeof iteratee == 'number' && typeof obj[0] != 'object') && obj != null) {
-      _.each(obj, function(value) {
-        if (value < result) {
-          result = value;
-        }
-      });
-    } else {
-      iteratee = cb(iteratee, context);
-      _.each(obj, function(v, index, list) {
-        computed = iteratee(v, index, list);
-        if (computed < lastComputed || computed === Infinity && result === Infinity) {
-          result = v;
-          lastComputed = computed;
-        }
-      });
-    }
-    return result;
-  };
+  _.min = require('./min');
 
   // Shuffle a collection.
   _.shuffle = function(obj) {
@@ -494,25 +206,7 @@
   };
 
   // Sort the object's values by a criterion produced by an iteratee.
-  _.sortBy = function(obj, iteratee, context) {
-    var index = 0;
-    iteratee = cb(iteratee, context);
-    return _.pluck(_.map(obj, function(value, key, list) {
-      return {
-        value: value,
-        index: index++,
-        criteria: iteratee(value, key, list)
-      };
-    }).sort(function(left, right) {
-      var a = left.criteria;
-      var b = right.criteria;
-      if (a !== b) {
-        if (a > b || a === void 0) return 1;
-        if (a < b || b === void 0) return -1;
-      }
-      return left.index - right.index;
-    }), 'value');
-  };
+  _.sortBy = require('./sortBy');
 
   // An internal function used for aggregate "group by" operations.
   var group = function(behavior, partition) {
@@ -907,16 +601,7 @@
   });
 
   // Memoize an expensive function by storing its results.
-  _.memoize = function(func, hasher) {
-    var memoize = function(key) {
-      var cache = memoize.cache;
-      var address = '' + (hasher ? hasher.apply(this, arguments) : key);
-      if (!_.has(cache, address)) cache[address] = func.apply(this, arguments);
-      return cache[address];
-    };
-    memoize.cache = {};
-    return memoize;
-  };
+  _.memoize = require('./memoize');
 
 
   // Returns the first function passed as an argument to the second,
@@ -935,151 +620,38 @@
 
   // Returns a function that is the composition of a list of functions, each
   // consuming the return value of the function that follows.
-  _.compose = function() {
-    var args = arguments;
-    var start = args.length - 1;
-    return function() {
-      var i = start;
-      var result = args[start].apply(this, arguments);
-      while (i--) result = args[i].call(this, result);
-      return result;
-    };
-  };
+  _.compose = require('./compose');
 
   // Returns a function that will only be executed on and after the Nth call.
-  _.after = function(times, func) {
-    return function() {
-      if (--times < 1) {
-        return func.apply(this, arguments);
-      }
-    };
-  };
+  _.after = require('./after');
 
   // Returns a function that will only be executed up to (but not including) the Nth call.
-  _.before = function(times, func) {
-    var memo;
-    return function() {
-      if (--times > 0) {
-        memo = func.apply(this, arguments);
-      }
-      if (times <= 1) func = null;
-      return memo;
-    };
-  };
+  _.before = require('./before');
 
   // Returns a function that will be executed at most one time, no matter how
   // often you call it. Useful for lazy initialization.
   _.once = _.partial(_.before, 2);
 
-  _.prop = _.getProp = function getProp(object, path, defaults) {
-    var parts = (path + '').split('.'),
-      part;
+  _.prop = _.get = require('./get');
 
-    while (parts.length) {
-      part = parts.shift();
-      if (typeof object === 'object' && object !== null && part in object) {
-        object = object[part];
-      } else if (_.isString(object)) {
-        object = object[part];
-        break;
-      } else {
-        object = defaults;
-        break;
-      }
-    }
-    return object;
-  };
+  _.set = require('./set');
 
-  _.propSet = function propSet(obj, key, value) {
-    var parts = (key + '').split('.'),
-      object = obj,
-      part;
-
-    while (parts.length > 1) {
-      part = parts.shift();
-      if (typeof object === 'object' && object !== null && part in object) {
-        object = object[part];
-      } else {
-        object = object[part] = {};
-      }
-    }
-    object[parts.shift()] = value;
-    return obj;
-  };
-
-  _.merge = function(dst, src, maps) {
-    dst = dst || {};
-    src = src || {};
-    var value;
-
-    _.each(maps, function(s, d) {
-      value = _.prop(src, s);
-      if (typeof value !== 'undefined') {
-        _.propSet(dst, d, value);
-      }
-    });
-    return dst;
-  };
+  _.merge = require('./merge');
 
   _.restArgs = restArgs;
 
   // Object Functions
   // ----------------
 
-  // Keys in IE < 9 that won't be iterated by `for key in ...` and thus missed.
-  var hasEnumBug = !{toString: null}.propertyIsEnumerable('toString');
-  var nonEnumerableProps = ['valueOf', 'isPrototypeOf', 'toString',
-                      'propertyIsEnumerable', 'hasOwnProperty', 'toLocaleString'];
-
-  var collectNonEnumProps = function(obj, keys) {
-    var nonEnumIdx = nonEnumerableProps.length;
-    var constructor = obj.constructor;
-    var proto = _.isFunction(constructor) && constructor.prototype || ObjProto;
-
-    // Constructor is a special case.
-    var prop = 'constructor';
-    if (_.has(obj, prop) && !_.contains(keys, prop)) keys.push(prop);
-
-    while (nonEnumIdx--) {
-      prop = nonEnumerableProps[nonEnumIdx];
-      if (prop in obj && obj[prop] !== proto[prop] && !_.contains(keys, prop)) {
-        keys.push(prop);
-      }
-    }
-  };
-
   // Retrieve the names of an object's own properties.
   // Delegates to **ECMAScript 5**'s native `Object.keys`
-  _.keys = function(obj) {
-    if (!_.isObject(obj)) return [];
-    if (nativeKeys) return nativeKeys(obj);
-    var keys = [];
-    for (var key in obj) if (_.has(obj, key)) keys.push(key);
-    // Ahem, IE < 9.
-    if (hasEnumBug) collectNonEnumProps(obj, keys);
-    return keys;
-  };
+  _.keys = require('./keys');
 
   // Retrieve all the property names of an object.
-  _.allKeys = function(obj) {
-    if (!_.isObject(obj)) return [];
-    var keys = [];
-    for (var key in obj) keys.push(key);
-    // Ahem, IE < 9.
-    if (hasEnumBug) collectNonEnumProps(obj, keys);
-    return keys;
-  };
+  _.allKeys = require('./allKeys');
 
   // Retrieve the values of an object's properties.
-  _.values = function(obj) {
-    var keys = _.keys(obj);
-    var length = keys.length;
-    var values = Array(length);
-    for (var i = 0; i < length; i++) {
-      values[i] = obj[keys[i]];
-    }
-    return values;
-  };
+  _.values = require('./values');
 
   // Returns the results of applying the iteratee to each element of the object
   // In contrast to _.map it returns an object
@@ -1146,11 +718,11 @@
   };
 
   // Extend a given object with all the properties in passed-in object(s).
-  _.extend = createAssigner(_.allKeys);
+  _.extend = require('./extend');
 
   // Assigns a given object with all the own properties in the passed-in object(s)
   // (https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Object/assign)
-  _.extendOwn = _.assign = createAssigner(_.keys);
+  _.extendOwn = _.assign = require('./extendOwn');
 
   // Returns the first key on an object that passes a predicate test
   _.findKey = function(obj, predicate, context) {
@@ -1229,16 +801,7 @@
   };
 
   // Returns whether an object has a given set of `key:value` pairs.
-  _.isMatch = function(object, attrs) {
-    var keys = _.keys(attrs), length = keys.length;
-    if (object == null) return !length;
-    var obj = Object(object);
-    for (var i = 0; i < length; i++) {
-      var key = keys[i];
-      if (attrs[key] !== obj[key] || !(key in obj)) return false;
-    }
-    return true;
-  };
+  _.isMatch = require('./isMatch');
 
 
   // Internal recursive comparison function for `isEqual`.
@@ -1365,9 +928,7 @@
 
   // Is a given value an array?
   // Delegates to ECMA5's native Array.isArray
-  _.isArray = nativeIsArray || function(obj) {
-    return toString.call(obj) === '[object Array]';
-  };
+  _.isArray = Array.isArray;
 
   // Is a given variable an object?
   _.isObject = function(obj) {
@@ -1387,15 +948,6 @@
   if (!_.isArguments(arguments)) {
     _.isArguments = function(obj) {
       return _.has(obj, 'callee');
-    };
-  }
-
-  // Optimize `isFunction` if appropriate. Work around some typeof bugs in old v8,
-  // IE 11 (#1621), Safari 8 (#1929), and PhantomJS (#2236).
-  var nodelist = root.document && root.document.childNodes;
-  if (typeof /./ != 'function' && typeof Int8Array != 'object' && typeof nodelist != 'function') {
-    _.isFunction = function(obj) {
-      return typeof obj == 'function' || false;
     };
   }
 
@@ -1426,24 +978,14 @@
 
   // Shortcut function for checking if an object has a given property directly
   // on itself (in other words, not on a prototype).
-  _.has = function(obj, key) {
-    return obj != null && hasOwnProperty.call(obj, key);
-  };
+  _.has = require('./has');
 
   // Utility Functions
   // -----------------
 
-  // Run Underscore.js in *noConflict* mode, returning the `_` variable to its
-  // previous owner. Returns a reference to the Underscore object.
-  _.noConflict = function() {
-    root._ = previousUnderscore;
-    return this;
-  };
 
   // Keep the identity function around for default iteratees.
-  _.identity = function(value) {
-    return value;
-  };
+  _.identity = require('./identity');
 
   // Predicate-generating functions. Often useful outside of Underscore.
   _.constant = function(value) {
@@ -1465,12 +1007,7 @@
 
   // Returns a predicate for checking whether an object has a given set of
   // `key:value` pairs.
-  _.matcher = _.matches = function(attrs) {
-    attrs = _.extendOwn({}, attrs);
-    return function(obj) {
-      return _.isMatch(obj, attrs);
-    };
-  };
+  _.matcher = _.matches = require('./matcher');
 
   // Run a function **n** times.
   _.times = function(n, iteratee, context) {
@@ -1481,13 +1018,7 @@
   };
 
   // Return a random integer between min and max (inclusive).
-  _.random = function(min, max) {
-    if (max == null) {
-      max = min;
-      min = 0;
-    }
-    return min + Math.floor(Math.random() * (max - min + 1));
-  };
+  _.random = require('./random');
 
   // A (possibly faster) way to get the current timestamp as an integer.
   _.now = Date.now || function() {
@@ -1696,16 +1227,4 @@
     return '' + this._wrapped;
   };
 
-  // AMD registration happens at the end for compatibility with AMD loaders
-  // that may not enforce next-turn semantics on modules. Even though general
-  // practice for AMD registration is to be anonymous, underscore registers
-  // as a named module because, like jQuery, it is a base library that is
-  // popular enough to be bundled in a third party lib, but not be part of
-  // an AMD load request. Those cases could generate an error when an
-  // anonymous define() is called outside of a loader request.
-  if (typeof define == 'function' && define.amd) {
-    define('underscore', [], function() {
-      return _;
-    });
-  }
 }(module.exports));

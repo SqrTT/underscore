@@ -1,5 +1,5 @@
 (function() {
-  var _ = typeof require == 'function' ? require('..') : window._;
+  var _ = typeof require == 'function' ? require('../underscore') : window._;
 
   QUnit.module('Collections');
 
@@ -266,7 +266,6 @@
 
     array.dontmatch = 55;
     assert.strictEqual(_.find(array, function(x) { return x === 55; }), void 0, 'iterates array-likes correctly');
-
     // Matching an object like _.findWhere.
     var list = [{a: 1, b: 2}, {a: 2, b: 2}, {a: 1, b: 3}, {a: 1, b: 4}, {a: 2, b: 4}];
     assert.deepEqual(_.find(list, {a: 1}), {a: 1, b: 2}, 'can be used as findWhere');
@@ -326,8 +325,8 @@
     assert.strictEqual(_.filter, _.select, 'alias for filter');
   });
 
-  test('reject', function(assert) {
     var odds = _.reject([1, 2, 3, 4, 5, 6], function(num){ return num % 2 === 0; });
+  test('reject', function(assert) {
     assert.deepEqual(odds, [1, 3, 5], 'rejected each even number');
 
     var context = 'obj';
