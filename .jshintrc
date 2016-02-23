@@ -1,0 +1,29 @@
+{
+	"curly": false,
+	"white": false,
+	"eqnull" : true,
+	"eqeqeq": false,
+	"undef": true,
+	"onevar" : false,
+	"unused": true,
+	"browser": true,
+	"node": true,
+	"esnext": true,
+	"jquery": false,
+	"multistr": true,
+	"globals": {
+		"SitePreferences": true,
+		"Urls": true,
+		"Resources": true,
+		"User": true,
+		"request": true,
+		"response": true,
+		"session": true,
+		"customer": true,
+		"dw": true,
+		"empty": true,
+		"PIPELET_NEXT": true,
+		"PIPELET_ERROR": true,
+		"pdict": true
+	}
+}
