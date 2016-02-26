@@ -308,6 +308,7 @@
       <li>- <a href="#isDate">isDate</a></li>
       <li>- <a href="#isRegExp">isRegExp</a></li>
       <li>- <a href="#isError">isError</a></li>
+      <li>- <a href="#isSymbol">isSymbol</a></li>
       <li>- <a href="#isNaN">isNaN</a></li>
       <li>- <a href="#isNull">isNull</a></li>
       <li>- <a href="#isUndefined">isUndefined</a></li>
@@ -602,7 +603,7 @@ var odds = _.reject([1, 2, 3, 4, 5, 6], function(num){ return num % 2 == 0; });
         if a false element is found.
       </p>
       <pre>
-_.every([true, 1, null, 'yes'], _.identity);
+_.every([2, 4, 5], function(num) { return num % 2 == 0; });
 =&gt; false
 </pre>
 
@@ -977,8 +978,8 @@ _.zip(['moe', 'larry', 'curly'], [30, 40, 50], [true, false, false]);
         and so on.
       </p>
       <pre>
-_.unzip([['moe', 'larry', 'curly'], [30, 40, 50], [true, false, false]])
-=&gt; ["moe", 30, true], ["larry", 40, false], ["curly", 50, false]
+_.unzip([["moe", 30, true], ["larry", 40, false], ["curly", 50, false]]);
+=&gt; [['moe', 'larry', 'curly'], [30, 40, 50], [true, false, false]]
 </pre>
 
       <p id="object">
@@ -1131,7 +1132,7 @@ var buttonView = {
 };
 _.bindAll(buttonView, 'onClick', 'onHover');
 // When the button is clicked, this.label will have the correct value.
-jQuery('#underscore_button').bind('click', buttonView.onClick);
+jQuery('#underscore_button').on('click', buttonView.onClick);
 </pre>
 
       <p id="partial">
@@ -1231,6 +1232,12 @@ $(window).scroll(throttled);
         <i>after</i> the input has stopped arriving. For example: rendering a
         preview of a Markdown comment, recalculating a layout after the window
         has stopped being resized, and so on.
+      </p>
+
+      <p>
+        At the end of the <b>wait</b> interval, the function will be called
+        with the arguments that were passed <i>most recently</i> to the
+        debounced function.
       </p>
 
       <p>
@@ -1741,14 +1748,24 @@ _.isRegExp(/moe/);
       <p id="isError">
         <b class="header">isError</b><code>_.isError(object)</code>
         <br />
-        Returns <i>true</i> if <b>object</b> inherrits from an Error.
+        Returns <i>true</i> if <b>object</b> inherits from an Error.
       </p>
       <pre>
 try {
   throw new TypeError("Example");
 } catch (o_O) {
-  _.isError(o_O)
+  _.isError(o_O);
 }
+=&gt; true
+</pre>
+
+      <p id="isSymbol">
+        <b class="header">isSymbol</b><code>_.isSymbol(object)</code>
+        <br />
+        Returns <i>true</i> if <b>object</b> is a Symbol.
+      </p>
+      <pre>
+_.isSymbol(Symbol());
 =&gt; true
 </pre>
 
@@ -1885,10 +1902,11 @@ _("fabio").capitalize();
         identity, an arbitrary callback, a property matcher, or a property accessor.
         <br />
         The full list of Underscore methods that transform predicates
-        through <tt>_.iteratee</tt> is <tt>map</tt>, <tt>find</tt>,
-        <tt>filter</tt>, <tt>reject</tt>, <tt>every</tt>, <tt>some</tt>, <tt>max</tt>,
-        <tt>min</tt>, <tt>sortBy</tt>, <tt>groupBy</tt>, <tt>indexBy</tt>,
-        <tt>countBy</tt>, <tt>sortedIndex</tt>, <tt>partition</tt>, and <tt>unique</tt>.
+        through <tt>_.iteratee</tt> is <tt>countBy</tt>, <tt>every</tt>, <tt>filter</tt>,
+        <tt>find</tt>, <tt>findIndex</tt>, <tt>findKey</tt>, <tt>findLastIndex</tt>,
+        <tt>groupBy</tt>, <tt>indexBy</tt>, <tt>map</tt>, <tt>mapObject</tt>, <tt>max</tt>,
+        <tt>min</tt>, <tt>partition</tt>, <tt>reject</tt>, <tt>some</tt>, <tt>sortBy</tt>,
+        <tt>sortedIndex</tt>, and <tt>uniq</tt>
       </p>
       <pre>
 var stooges = [{name: 'curly', age: 25}, {name: 'moe', age: 21}, {name: 'larry', age: 23}];
