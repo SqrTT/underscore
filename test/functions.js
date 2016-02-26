@@ -4,7 +4,7 @@
   QUnit.module('Functions');
   QUnit.config.asyncRetries = 3;
 
-  test('bind', function(assert) {
+  QUnit.test('bind', function(assert) {
     var context = {name: 'moe'};
     var func = function(arg) { return 'name: ' + (this.name || arg); };
     var bound = _.bind(func, context);
@@ -44,10 +44,10 @@
     assert.equal(boundf().hello, 'moe curly', "When called without the new operator, it's OK to be bound to the context");
     assert.ok(newBoundf instanceof F, 'a bound instance is an instance of the original function');
 
-    assert.throws(function() { _.bind('notafunction'); }, TypeError, 'throws an error when binding to a non-function');
+    assert.raises(function() { _.bind('notafunction'); }, TypeError, 'throws an error when binding to a non-function');
   });
 
-  test('partial', function(assert) {
+  QUnit.test('partial', function(assert) {
     var obj = {name: 'moe'};
     var func = function() { return this.name + ' ' + _.toArray(arguments).join(' '); };
 
@@ -89,8 +89,9 @@
     _.partial.placeholder = _;
   });
 
-  test('bindAll', function(assert) {
-    var curly = {name: 'curly'}, moe = {
+  QUnit.test('bindAll', function(assert) {
+    var curly = {name: 'curly'};
+    var moe = {
       name: 'moe',
       getName: function() { return 'name: ' + this.name; },
       sayHi: function() { return 'hi: ' + this.name; }
@@ -109,9 +110,9 @@
       sayLast: function() { return this.sayHi(_.last(arguments)); }
     };
 
-    assert.throws(function() { _.bindAll(moe); }, Error, 'throws an error for bindAll with no functions named');
-    assert.throws(function() { _.bindAll(moe, 'sayBye'); }, TypeError, 'throws an error for bindAll if the given key is undefined');
-    assert.throws(function() { _.bindAll(moe, 'name'); }, TypeError, 'throws an error for bindAll if the given key is not a function');
+    assert.raises(function() { _.bindAll(moe); }, Error, 'throws an error for bindAll with no functions named');
+    assert.raises(function() { _.bindAll(moe, 'sayBye'); }, TypeError, 'throws an error for bindAll if the given key is undefined');
+    assert.raises(function() { _.bindAll(moe, 'name'); }, TypeError, 'throws an error for bindAll if the given key is not a function');
 
     _.bindAll(moe, 'sayHi', 'sayLast');
     curly.sayHi = moe.sayHi;
@@ -125,7 +126,7 @@
     assert.equal(getName(), 'name: moe', 'flattens arguments into a single list');
   });
 
-  test('memoize', function(assert) {
+  QUnit.test('memoize', function(assert) {
     var fib = function(n) {
       return n < 2 ? n : fib(n - 1) + fib(n - 2);
     };
@@ -175,7 +176,10 @@
   });
 
 
-  test('once', function(assert) {
+
+
+
+  QUnit.test('once', function(assert) {
     var num = 0;
     var increment = _.once(function(){ return ++num; });
     increment();
@@ -185,7 +189,8 @@
     assert.equal(increment(), 1, 'stores a memo to the last value');
   });
 
-  test('Recursive onced function.', 1, function(assert) {
+  QUnit.test('Recursive onced function.', function(assert) {
+    assert.expect(1);
     var f = _.once(function(){
       assert.ok(true);
       f();
@@ -193,7 +198,7 @@
     f();
   });
 
-  test('wrap', function(assert) {
+  QUnit.test('wrap', function(assert) {
     var greet = function(name){ return 'hi: ' + name; };
     var backwards = _.wrap(greet, function(func, name){ return func(name) + ' ' + name.split('').reverse().join(''); });
     assert.equal(backwards('moe'), 'hi: moe eom', 'wrapped the salutation function');
@@ -209,13 +214,13 @@
     assert.deepEqual(ret, [noop, ['whats', 'your'], 'vector', 'victor']);
   });
 
-  test('negate', function(assert) {
+  QUnit.test('negate', function(assert) {
     var isOdd = function(n){ return n & 1; };
     assert.equal(_.negate(isOdd)(2), true, 'should return the complement of the given function');
     assert.equal(_.negate(isOdd)(3), false, 'should return the complement of the given function');
   });
 
-  test('compose', function(assert) {
+  QUnit.test('compose', function(assert) {
     var greet = function(name){ return 'hi: ' + name; };
     var exclaim = function(sentence){ return sentence + '!'; };
     var composed = _.compose(exclaim, greet);
@@ -241,7 +246,7 @@
     assert.equal(composed(1, 2, 3), 12);
   });
 
-  test('after', function(assert) {
+  QUnit.test('after', function(assert) {
     var testAfter = function(afterAmount, timesCalled) {
       var afterCalled = 0;
       var after = _.after(afterAmount, function() {
@@ -257,7 +262,7 @@
     assert.equal(testAfter(0, 1), 1, 'after(0) should fire when first invoked');
   });
 
-  test('before', function(assert) {
+  QUnit.test('before', function(assert) {
     var testBefore = function(beforeAmount, timesCalled) {
       var beforeCalled = 0;
       var before = _.before(beforeAmount, function() { beforeCalled++; });
@@ -277,7 +282,7 @@
     assert.equal(context.num, 2, 'provides context');
   });
 
-  test('iteratee', function(assert) {
+  QUnit.test('iteratee', function(assert) {
     var identity = _.iteratee();
     assert.equal(identity, _.identity, '_.iteratee is exposed as an external function.');
 
@@ -292,7 +297,8 @@
 
   });
 
-  test('restArgs', 10, function(assert) {
+  QUnit.test('restArgs', function(assert) {
+    assert.expect(10);
     _.restArgs(function(a, args) {
       assert.strictEqual(a, 1);
       assert.deepEqual(args, [2, 3], 'collects rest arguments into an array');
