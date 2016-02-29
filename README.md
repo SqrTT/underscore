@@ -14,8 +14,16 @@
 #Improved Underscore version for Demandware
 
 List of main changes:
-* iterative methods works properly with demandware iterators, `_.each(basket.productLineItems, function (productLineItem) {...})` etc.
-* iterative methods support second argument as string and can interpolate it as lambda expression (described bellow).
+* for perfomance reason common used functions are moved to separete files. As result, for instance, method `forEach` might be used without loading whole library. If you put underscore into modules folder you can use functions:
+```javascript
+const map = require('underscore/map');
+...
+return map(basket.productLineItems, function (productLineItem) {
+   return productLineItem.getQuatity().getValue();
+});
+...
+```
+* iterative methods works properly with demandware iterators, `_.forEach(basket.productLineItems, function (productLineItem) {...})` etc.
 * added method `_.get` - allows safety get deep property `_.get(pdict, 'session.customer.profile.custom.isOurGuy')` return `isOurGuy` only if whole path exist or `undefined` in another case (will not throw error).
 * added method `merge` - allows copy properties from one to another deeply by provided properties.
 * methods which use `_.property` also works through `_.get`, that means you can write `_.pluck(basket.productLineItems, 'product.custom.surprise')` and get array of `surprise's`.
