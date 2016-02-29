@@ -14,7 +14,7 @@
 #Improved Underscore version for Demandware
 
 List of main changes:
-* for perfomance reason common used functions are moved to separete files. As result, for instance, method `forEach` might be used without loading whole library. If you put underscore into modules folder you can use functions:
+* for perfomance reason common used functions are moved to separete files. As result, for instance, method `forEach` might be used without loading whole library. If your underscore is based in modules folder, you can use functions:
 ```javascript
 const map = require('underscore/map');
 ...
