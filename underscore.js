@@ -408,7 +408,7 @@
     var result = Infinity, lastComputed = Infinity, computed;
     if (iteratee == null || (typeof iteratee == 'number' && typeof obj[0] != 'object') && obj != null) {
       _.each(obj, function(value) {
-        if (value < result) {
+        if (value != null && value < result) {
           result = value;
         }
       });
@@ -504,11 +504,16 @@
   _.countBy = group(function(result, value, key) {
     if (_.has(result, key)) result[key]++; else result[key] = 1;
   });
-
+  
+  var reStrSymbol = /[^\ud800-\udfff]|[\ud800-\udbff][\udc00-\udfff]|[\ud800-\udfff]/g;
   // Safely create a real, live array from anything iterable.
   _.toArray = function(obj) {
     if (!obj) return [];
     if (_.isArray(obj)) return slice.call(obj);
+    if (_.isString(obj)) {
+        // Keep surrogate pair characters together
+        return obj.match(reStrSymbol);
+      }
     if (isArrayLike(obj)) return _.map(obj, _.identity);
     return _.values(obj);
   };

@@ -5,7 +5,7 @@ module.exports = function (obj, iteratee, context) {
     var result = Infinity, lastComputed = Infinity, computed;
     if (iteratee == null || (typeof iteratee == 'number' && typeof obj[0] != 'object') && obj != null) {
       forEach(obj, function(value) {
-        if (value < result) {
+        if (value != null && value < result) {
           result = value;
         }
       });
