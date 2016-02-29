@@ -42,17 +42,7 @@
     this._wrapped = obj;
   };
 
-  // Export the Underscore object for **Node.js**, with
-  // backwards-compatibility for their old module API. If we're in
-  // the browser, add `_` as a global object.
-  if (typeof exports != 'undefined') {
-    if (typeof module != 'undefined' && module.exports) {
-      exports = module.exports = _;
-    }
-    exports._ = _;
-  } else {
-    root._ = _;
-  }
+  module.exports = _;
 
   // Current version.
   _.VERSION = '1.8.3';
@@ -80,32 +70,6 @@
     };
   };
 
-  function lambdaParse(str, arg) {
-    if (!str) return null;
-    if (typeof str === 'function') return str;
-
-    var names, fn,
-      args = 'var $ = arguments[0],$$ = arguments[1],' +
-      _.map(_.range(10), function(value) {
-          return '$' + value + ' = arguments[' + value + ']';
-        }).join(',') + ';';
-
-    var m = /^\s*(\w+)\s*->(.+)$/.exec(str);
-    if (m) {
-      names = [m[1]];
-      str = m[2];
-    } else if (m = /^\s*\(\s*([\w\s,]*)\s*\)\s*->(.+)$/.exec(str)) {
-      names = m[1].split(/\s*,\s*/);
-      str = m[2];
-    } else {
-      names = [];
-      str = str.replace('->', '');
-    }
-
-    fn = 'return function (' + names.join(',') + ') { ; ' + args + '; return ' + str + ' ;};';
-    return new Function('_', 'arg', fn)(_, arg);
-
-  }
   // A mostly-internal function to generate callbacks that can be applied
   // to each element in a collection, returning the desired result — either
   // `identity`, an arbitrary callback, a property matcher, or a property accessor.
@@ -113,9 +77,6 @@
     if (value == null) return _.identity;
     if (_.isFunction(value)) return optimizeCb(value, context, argCount);
     if (_.isObject(value)) return _.matcher(value);
-    if (_.isString(value) && value.indexOf('->') !== -1) {
-      return lambdaParse(value, context);
-    }
     return _.property(value);
   };
 
@@ -195,8 +156,6 @@
           return true;
         }
       };
-
-    callback = lambdaParse(callback);
 
     if (typeof collection === 'object' && collection !== null) {
       if ('iterator' in collection && typeof collection.iterator === 'function') {
@@ -449,7 +408,7 @@
     var result = Infinity, lastComputed = Infinity, computed;
     if (iteratee == null || (typeof iteratee == 'number' && typeof obj[0] != 'object') && obj != null) {
       _.each(obj, function(value) {
-        if (value < result) {
+        if (value != null && value < result) {
           result = value;
         }
       });
@@ -545,11 +504,16 @@
   _.countBy = group(function(result, value, key) {
     if (_.has(result, key)) result[key]++; else result[key] = 1;
   });
-
+  
+  var reStrSymbol = /[^\ud800-\udfff]|[\ud800-\udbff][\udc00-\udfff]|[\ud800-\udfff]/g;
   // Safely create a real, live array from anything iterable.
   _.toArray = function(obj) {
     if (!obj) return [];
     if (_.isArray(obj)) return slice.call(obj);
+    if (_.isString(obj)) {
+        // Keep surrogate pair characters together
+        return obj.match(reStrSymbol);
+      }
     if (isArrayLike(obj)) return _.map(obj, _.identity);
     return _.values(obj);
   };
@@ -824,7 +788,9 @@
       stop = start || 0;
       start = 0;
     }
-    step = step || 1;
+    if (!step) {
+      step = stop < start ? -1 : 1;
+    }
 
     var length = Math.max(Math.ceil((stop - start) / step), 0);
     var range = Array(length);
@@ -971,7 +937,7 @@
   // often you call it. Useful for lazy initialization.
   _.once = _.partial(_.before, 2);
 
-  _.prop = _.getProp = function getProp(object, path, defaults) {
+  _.prop = _.getProp = _.get = function getProp(object, path, defaults) {
     var parts = (path + '').split('.'),
       part;
 
@@ -990,7 +956,7 @@
     return object;
   };
 
-  _.propSet = function propSet(obj, key, value) {
+  _.propSet = _.set = function propSet(obj, key, value) {
     var parts = (key + '').split('.'),
       object = obj,
       part;
@@ -1376,7 +1342,7 @@
   };
 
   // Add some isType methods: isArguments, isFunction, isString, isNumber, isDate, isRegExp, isError.
-  _.each(['Arguments', 'Function', 'String', 'Number', 'Date', 'RegExp', 'Error'], function(name) {
+  _.each(['Arguments', 'Function', 'String', 'Number', 'Date', 'RegExp', 'Error', 'Symbol'], function(name) {
     _['is' + name] = function(obj) {
       return toString.call(obj) === '[object ' + name + ']';
     };
@@ -1390,18 +1356,11 @@
     };
   }
 
-  // Optimize `isFunction` if appropriate. Work around some typeof bugs in old v8,
-  // IE 11 (#1621), Safari 8 (#1929), and PhantomJS (#2236).
-  var nodelist = root.document && root.document.childNodes;
-  if (typeof /./ != 'function' && typeof Int8Array != 'object' && typeof nodelist != 'function') {
-    _.isFunction = function(obj) {
-      return typeof obj == 'function' || false;
-    };
-  }
+
 
   // Is a given object a finite number?
   _.isFinite = function(obj) {
-    return isFinite(obj) && !isNaN(parseFloat(obj));
+    return !_.isSymbol(obj) && isFinite(obj) && !isNaN(parseFloat(obj));
   };
 
   // Is the given value `NaN`?
@@ -1696,16 +1655,4 @@
     return '' + this._wrapped;
   };
 
-  // AMD registration happens at the end for compatibility with AMD loaders
-  // that may not enforce next-turn semantics on modules. Even though general
-  // practice for AMD registration is to be anonymous, underscore registers
-  // as a named module because, like jQuery, it is a base library that is
-  // popular enough to be bundled in a third party lib, but not be part of
-  // an AMD load request. Those cases could generate an error when an
-  // anonymous define() is called outside of a loader request.
-  if (typeof define == 'function' && define.amd) {
-    define('underscore', [], function() {
-      return _;
-    });
-  }
-}(module.exports));
+}(this));

@@ -1,0 +1,14 @@
+{
+	"curly": false,
+	"white": false,
+	"eqnull" : true,
+	"eqeqeq": false,
+	"undef": true,
+	"onevar" : false,
+	"unused": true,
+	"browser": true,
+	"node": true,
+	"esnext": true,
+	"jquery": false,
+	"multistr": true
+}
