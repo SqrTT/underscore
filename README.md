@@ -19,7 +19,7 @@ List of main changes:
 const map = require('underscore/map');
 ...
 return map(basket.productLineItems, function (productLineItem) {
-   return productLineItem.getQuatity().getValue();
+   return productLineItem.getQuantity().getValue();
 });
 ...
 ```
