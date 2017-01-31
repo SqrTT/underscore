@@ -1,4 +1,4 @@
-module.exports = function range(start, stop, step) {
+module.exports = function(start, stop, step) {
     if (stop == null) {
         stop = start || 0;
         start = 0;
@@ -8,11 +8,11 @@ module.exports = function range(start, stop, step) {
     }
 
     var length = Math.max(Math.ceil((stop - start) / step), 0);
-    var rng = new Array(length);
+    var range = Array(length);
 
     for (var idx = 0; idx < length; idx++, start += step) {
-        rng[idx] = start;
+        range[idx] = start;
     }
 
-    return rng;
+    return range;
 };

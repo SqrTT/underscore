@@ -5,14 +5,14 @@ module.exports = function first(array, n, guard) {
         n = 1;
     }
     var result = [];
-    find(array, function(value) {
+    find(array, function (value) {
         if (result.length !== n && result.length < n) {
             result.push(value);
         } else {
             return true;
         }
     });
-    if (result.length === 1) {
+    if (result.length && n === 1) {
         result = result.pop();
     }
     return result;

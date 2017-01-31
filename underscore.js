@@ -382,26 +382,7 @@
   };
 
   // Return the maximum element (or element-based computation).
-  _.max = function(obj, iteratee, context) {
-    var result = -Infinity, lastComputed = -Infinity, computed;
-    if (iteratee == null || (typeof iteratee == 'number' && typeof obj[0] != 'object') && obj != null) {
-      _.each(obj, function(value) {
-        if (value > result) {
-          result = value;
-        }
-      });
-    } else {
-      iteratee = cb(iteratee, context);
-      _.each(obj, function(v, index, list) {
-        computed = iteratee(v, index, list);
-        if (computed > lastComputed || computed === -Infinity && result === -Infinity) {
-          result = v;
-          lastComputed = computed;
-        }
-      });
-    }
-    return result;
-  };
+  _.max = require('./max');
 
   // Return the minimum element (or element-based computation).
   _.min = function(obj, iteratee, context) {
@@ -504,16 +485,16 @@
   _.countBy = group(function(result, value, key) {
     if (_.has(result, key)) result[key]++; else result[key] = 1;
   });
-  
+
   var reStrSymbol = /[^\ud800-\udfff]|[\ud800-\udbff][\udc00-\udfff]|[\ud800-\udfff]/g;
   // Safely create a real, live array from anything iterable.
   _.toArray = function(obj) {
     if (!obj) return [];
     if (_.isArray(obj)) return slice.call(obj);
     if (_.isString(obj)) {
-        // Keep surrogate pair characters together
-        return obj.match(reStrSymbol);
-      }
+      // Keep surrogate pair characters together
+      return obj.match(reStrSymbol);
+    }
     if (isArrayLike(obj)) return _.map(obj, _.identity);
     return _.values(obj);
   };
@@ -549,7 +530,7 @@
         return true;
       }
     });
-    if (result.length === 1) {
+    if (result.length && n === 1) {
       result = result.pop();
     }
     return result;
@@ -783,24 +764,7 @@
   // Generate an integer Array containing an arithmetic progression. A port of
   // the native Python `range()` function. See
   // [the Python documentation](http://docs.python.org/library/functions.html#range).
-  _.range = function(start, stop, step) {
-    if (stop == null) {
-      stop = start || 0;
-      start = 0;
-    }
-    if (!step) {
-      step = stop < start ? -1 : 1;
-    }
-
-    var length = Math.max(Math.ceil((stop - start) / step), 0);
-    var range = Array(length);
-
-    for (var idx = 0; idx < length; idx++, start += step) {
-      range[idx] = start;
-    }
-
-    return range;
-  };
+  _.range = require('./range');
 
   // Split an **array** into several arrays containing **count** or less elements
   // of initial array
@@ -1357,7 +1321,6 @@
   }
 
 
-
   // Is a given object a finite number?
   _.isFinite = function(obj) {
     return !_.isSymbol(obj) && isFinite(obj) && !isNaN(parseFloat(obj));
@@ -1655,4 +1618,4 @@
     return '' + this._wrapped;
   };
 
-}(this));
+}(module.exports));

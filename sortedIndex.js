@@ -1,5 +1,5 @@
 const cb = require('./cb');
-const getLength = require('./_arrayHelper').getLength;
+const getLength = require('./getLength');
 
 // Use a comparator function to figure out the smallest index at which
 // an object should be inserted so as to maintain order. Uses binary search.
