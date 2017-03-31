@@ -4,10 +4,9 @@
   "homepage": "http://underscorejs.org",
   "keywords": [
     "util",
+    "demandware"
     "functional",
-    "server",
-    "client",
-    "browser"
+    "server"
   ],
   "author": "Jeremy Ashkenas <jeremy@documentcloud.org>",
   "repository": {
@@ -15,7 +14,7 @@
     "url": "git://github.com/jashkenas/underscore.git"
   },
   "main": "underscore.js",
-  "version": "1.8.3.dw",
+  "version": "1.8.300",
   "devDependencies": {
     "coveralls": "^2.11.2",
     "docco": "*",
@@ -37,10 +36,5 @@
     "build": "uglifyjs underscore.js -c \"evaluate=false\" --comments \"/    .*/\" -m --source-map underscore-min.map --source-map-url \" \" -o underscore-min.js",
     "doc": "docco underscore.js"
   },
-  "license": "MIT",
-  "files": [
-    "underscore.js",
-    "underscore-min.js",
-    "underscore-min.map"
-  ]
+  "license": "MIT"
 }
